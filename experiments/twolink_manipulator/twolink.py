@@ -1,14 +1,8 @@
 from math import sin, cos
-from typing import Tuple, Union, List
+from typing import Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from twolink_manipulator.potential import Potential
-from twolink_manipulator.sphere_obstacle import SphereObstacle
-from twolink_manipulator.common import sphere_distance, sphere_distance_gradient
-
-import cvxpy
 
 
 class TwoLink:
@@ -37,29 +31,30 @@ class TwoLink:
 
     def update_joints(self, joint_angles: Tuple[float, float]):
         self.joint_angles = joint_angles
-        self._forward_kinematics()
+        self.joint2_position, self.end_position, self.jacobian = self._forward_kinematics(joint_angles)
 
-    def _forward_kinematics(self):
-        theta0 = self.joint_angles[0]
-        theta1 = self.joint_angles[1]
-
-        l0 = self.link_lengths[0]
-        l1 = self.link_lengths[1]
-
-        self.joint2_position = self.joint1_position + np.array([l0*cos(theta0), l0*sin(theta0)])
-        self.end_position = self.joint2_position + np.array([l1*cos(theta0 + theta1), l1*sin(theta0 + theta1)])
-
-        # Calculate the trig values for more concise code
-        s1 = sin(self.joint_angles[0])
-        s12 = sin(self.joint_angles[0] + self.joint_angles[1])
-        c1 = cos(self.joint_angles[0])
-        c12 = cos(self.joint_angles[0] + self.joint_angles[1])
-
-        # Unpack the link lengths
+    def _forward_kinematics(self, joint_angles: Tuple[float, float]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        theta1, theta2 = joint_angles
         l1, l2 = self.link_lengths
 
+        # Calculate the trig values for more concise code
+        s1 = sin(theta1)
+        s12 = sin(theta1 + theta2)
+        c1 = cos(theta1)
+        c12 = cos(theta1 + theta2)
+
+        joint2_position = self.joint1_position + np.array([l1*c1, l1*s1])
+        end_position = joint2_position + np.array([l2*c12, l2*s12])
+
         # Construct the Jacobian matrix
-        self.jacobian = np.array([[-l2 * s12 - l1 * s1, -l2 * s12], [l2 * c12 + l1 * c1, l2 * c12]])
+        jacobian = np.array([[-l2 * s12 - l1 * s1, -l2 * s12], [l2 * c12 + l1 * c1, l2 * c12]])
+
+        return joint2_position, end_position, jacobian
+
+    def forward_kinematics(self, joint_angles: Tuple[float, float]) -> Tuple[np.ndarray, np.ndarray]:
+        _, end_position, jacobian = self._forward_kinematics(joint_angles)
+
+        return end_position, jacobian
 
     def plot(self, ax=None):
         if ax is None:

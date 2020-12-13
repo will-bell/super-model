@@ -1,5 +1,5 @@
 import numpy as np
-from twolink_manipulator.sphere_obstacle import SphereObstacle
+from common.sphere_obstacle import SphereObstacle
 import sys
 
 EPS = sys.float_info.epsilon
@@ -13,7 +13,7 @@ def sphere_distance(point: np.ndarray, sphere: SphereObstacle) -> float:
     return distance(point, sphere.center) - sphere.radius
 
 
-def sphere_distance_gradient(point: np.ndarray, sphere: SphereObstacle) -> float:
+def sphere_distance_gradient(point: np.ndarray, sphere: SphereObstacle) -> np.ndarray:
     rel_pos = point - sphere.center
     if sphere.radius < 0:
         rel_pos = -rel_pos
