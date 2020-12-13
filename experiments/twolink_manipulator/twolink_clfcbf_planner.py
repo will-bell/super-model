@@ -35,15 +35,15 @@ def twolink_clfcbf_control(twolink: TwoLink, theta_eval: np.ndarray, potential: 
     return u_star
 
 
-def twolink_clfcbf_planner(twolink: TwoLink, theta_goal: np.ndarray, obstacles: List[SphereObstacle] = None,
+def twolink_clfcbf_planner(twolink: TwoLink, theta_goal: Tuple[float, float], obstacles: List[SphereObstacle] = None,
                            n_steps: int = 1000, eps: float = 1., m: float = 10000.) -> Tuple[np.ndarray, np.ndarray]:
 
     obstacles = [] if obstacles is None else obstacles
 
     path = [np.array(twolink.joint_angles)]
     p_start = twolink.end_position
-    p_goal, _ = twolink.forward_kinematics(tuple(theta_goal))
-    potential = Potential(p_goal, quadratic_radius=.1)
+    p_goal, _ = twolink.forward_kinematics(theta_goal)
+    potential = Potential(p_goal, quadratic_radius=.05)
     path_u = [potential.evaluate_potential(p_start)]
 
     step = 0
@@ -70,10 +70,13 @@ if __name__ == '__main__':
 
     l1 = 1
     l2 = 1
-    _twolink = TwoLink((l1, l2), joint_angles=(.1, .1))
+
+    theta_start = (np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi))
+    _twolink = TwoLink((l1, l2), joint_angles=theta_start)
 
     _theta_goal = (np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi))
     _p_goal, _ = _twolink.forward_kinematics(_theta_goal)
+
     theta_path, _path_u = twolink_clfcbf_planner(_twolink, _theta_goal, eps=.1, m=1000.)
 
     fig1, ax1 = plt.subplots()
@@ -90,6 +93,7 @@ if __name__ == '__main__':
         _twolink.update_joints(tuple(theta_path[i]))
         _twolink.plot(ax)
         ax.plot(_p_goal[0], _p_goal[1], 'or')
+        ax.plot([_twolink.end_position[0], _p_goal[0]], [_twolink.end_position[1], _p_goal[1]], '--g')
 
     anim = FuncAnimation(fig, animate, interval=5, frames=theta_path.shape[0]-1)
     plt.draw()
