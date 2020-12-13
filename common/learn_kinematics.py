@@ -110,7 +110,7 @@ if __name__ == '__main__':
     xx, yy = np.meshgrid(x_range, y_range)
     _configurations = np.vstack([xx.ravel(), yy.ravel()]).T
 
-    trained_model, _loss_history = train_kinematics(_model, identity_kinematics, _configurations, n_epochs=5, lr=.8e-3)
+    trained_model, _loss_history = learn_kinematics(_model, identity_kinematics, _configurations, n_epochs=10, lr=.8e-3)
     plt.plot(_loss_history[:, 0], _loss_history[:, 1], '-b')
     plt.xlabel('')
     plt.show()

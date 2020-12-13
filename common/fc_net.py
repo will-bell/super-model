@@ -18,12 +18,17 @@ class FCNet(nn.Module):
             else:
                 hidden_layers = [nn.Linear(s1, s2) for s1, s2 in zip(hidden_sizes[:-1], hidden_sizes[1:])]
             output_layer = nn.Linear(hidden_sizes[-1], output_size)
-            layers = [input_layer, *hidden_layers, output_layer]
+            linear_layers = [input_layer, *hidden_layers, output_layer]
 
         else:
-            layers = [nn.Linear(input_size, output_size)]
+            linear_layers = [nn.Linear(input_size, output_size)]
 
-        self.model = nn.Sequential(*layers)
+        network = [linear_layers[0]]
+        for layer in linear_layers[1:]:
+            network.append(nn.ReLU())
+            network.append(layer)
+
+        self.model = nn.Sequential(*network)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model(x)
