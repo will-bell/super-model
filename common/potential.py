@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Tuple
-from common.common import distance
+from common.functions import distance
 
 
 class Potential:
@@ -21,23 +21,20 @@ class Potential:
         assert quadratic_radius > 0, 'Eta must be a value greater than 0'
         return minimum.copy(), zeta, quadratic_radius
 
-    def evaluate_potential(self, point: np.ndarray, power: int = 1) -> float:
+    def evaluate_potential(self, point: np.ndarray) -> float:
         d2min = distance(point, self._minimum)
         if d2min <= self._quadratic_radius:
             value = .5 * self._zeta * d2min ** 2
         else:
             value = self._quadratic_radius * self._zeta * d2min - .5 * self._zeta * self._quadratic_radius ** 2
 
-        # value = d2min**power
-
         return value
 
-    def evaluate_potential_gradient(self, point: np.ndarray, power: int = 1) -> np.ndarray:
+    def evaluate_potential_gradient(self, point: np.ndarray) -> np.ndarray:
         d2min = distance(point, self._minimum)
         if d2min <= self._quadratic_radius:
             value = self._zeta * (point - self._minimum)
         else:
             value = self._quadratic_radius * self._zeta * (point - self._minimum) / d2min
 
-        # value = power * d2min**(power - 2) * (point - self._minimum)
         return value

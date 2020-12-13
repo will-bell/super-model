@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
 
-from common.common import sphere_distance, sphere_distance_gradient
+from common.sphere_obstacle import sphere_distance, sphere_distance_gradient
 from common.control import qp_min_effort
 from common.potential import Potential
 from common.sphere_obstacle import SphereObstacle
@@ -37,7 +37,7 @@ def point_mass_clfcbf_planner(p_start: np.ndarray, p_goal: np.ndarray, obstacles
     obstacles = [] if obstacles is None else obstacles
 
     path = [p_start]
-    potential = Potential(p_goal, quadratic_radius=3)
+    potential = Potential(p_goal, quadratic_radius=.05)
     path_u = [potential.evaluate_potential(p_start)]
 
     step = 0
@@ -47,7 +47,7 @@ def point_mass_clfcbf_planner(p_start: np.ndarray, p_goal: np.ndarray, obstacles
 
         path_u.append(potential.evaluate_potential(path[-1]))
 
-        if np.linalg.norm(command) < 1e-3 or np.linalg.norm(path[-1] - p_goal) < .01:
+        if np.linalg.norm(command) < 1e-2 or np.linalg.norm(path[-1] - p_goal) < 1e-2:
             break
 
         step += 1
@@ -62,9 +62,8 @@ if __name__ == '__main__':
     _p_start = np.array([-1.5, 0.1])
     _p_goal = np.array([1.5, 0.])
 
-    # _obstacles = [SphereObstacle((0., 0.), .25)]
-    _obstacles = []
-    _path, _path_u = point_mass_clfcbf_planner(_p_start, _p_goal, obstacles=_obstacles, eps=.1, m=10)
+    _obstacles = [SphereObstacle((0., 0.), .25)]
+    _path, _path_u = point_mass_clfcbf_planner(_p_start, _p_goal, obstacles=_obstacles, eps=.1, m=100)
 
     fig1, ax1 = plt.subplots()
     ax1.plot(_path_u)
@@ -83,6 +82,7 @@ if __name__ == '__main__':
         ax.plot(_p_goal[0], _p_goal[1], 'or')
         for obstacle in _obstacles:
             obstacle.plot(ax)
+        ax.plot([_path[i, 0], _p_goal[0]], [_path[i, 1], _p_goal[1]], '--g')
 
 
     anim = FuncAnimation(fig, animate, interval=5, frames=_path.shape[0] - 1)

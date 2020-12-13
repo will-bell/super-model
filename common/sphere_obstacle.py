@@ -1,6 +1,9 @@
-import numpy as np
 from typing import Tuple
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+from common.functions import distance, EPS
 
 
 class SphereObstacle:
@@ -19,3 +22,20 @@ class SphereObstacle:
 
         circle_plot = plt.Circle(tuple(self.center), self.radius, color='r')
         ax.add_artist(circle_plot)
+
+
+def sphere_distance(point: np.ndarray, sphere: SphereObstacle) -> float:
+    return distance(point, sphere.center) - sphere.radius
+
+
+def sphere_distance_gradient(point: np.ndarray, sphere: SphereObstacle) -> np.ndarray:
+    rel_pos = point - sphere.center
+    if sphere.radius < 0:
+        rel_pos = -rel_pos
+    den = np.linalg.norm(rel_pos)
+    if den < EPS:
+        gradient = np.array([0., 0.])
+    else:
+        gradient = rel_pos / den
+
+    return gradient

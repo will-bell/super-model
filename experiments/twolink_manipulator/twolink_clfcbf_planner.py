@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
 
-from common.common import sphere_distance, sphere_distance_gradient
+from common.sphere_obstacle import sphere_distance, sphere_distance_gradient
 from common.control import qp_min_effort
 from common.potential import Potential
 from common.sphere_obstacle import SphereObstacle
@@ -15,8 +15,8 @@ def twolink_clfcbf_control(twolink: TwoLink, theta_eval: np.ndarray, potential: 
                            obstacles: List[SphereObstacle], m: float) -> np.ndarray:
 
     p_eval, jacobian = twolink.forward_kinematics(tuple(theta_eval))
-    Aclf = (jacobian @ potential.evaluate_potential_gradient(p_eval, power=2).reshape(2, 1)).reshape(1, 2)
-    bclf = potential.evaluate_potential(p_eval, power=2)
+    Aclf = (jacobian @ potential.evaluate_potential_gradient(p_eval).reshape(2, 1)).reshape(1, 2)
+    bclf = potential.evaluate_potential(p_eval)
 
     if len(obstacles):
         Acbf = []
