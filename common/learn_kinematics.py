@@ -1,13 +1,16 @@
 # Ignore warnings
 import warnings
 from math import ceil
-from typing import Callable, Union, Tuple
+from typing import Callable, Union, Tuple, List
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
+from common.control import qp_min_effort
+from common.potential import Potential
+from common.sphere_obstacle import SphereObstacle, sphere_distance
 from common.stochastic_model import GaussianModel, FCNet
 
 warnings.filterwarnings("ignore")
@@ -94,6 +97,48 @@ def learn_kinematics(model: GaussianModel, forward_kinematics: Kinematics, confi
     loss_history = np.asarray(loss_history)
 
     return model, loss_history
+
+
+def backprop_clfcbf_control(model: GaussianModel, c_eval: np.ndarray, potential: Potential,
+                            obstacles: List[SphereObstacle], m: float) -> np.ndarray:
+    def zero_grads():
+        model.zero_grad()
+        c_eval.grad.data.zero_()
+
+    c_eval = torch.Tensor(c_eval).requires_grad_()
+    p_eval = model(c_eval).rsample()
+
+    clf_value = potential.evaluate_potential(p_eval)
+    clf_value.backward(retain_graph=True)
+
+    Aclf = c_eval.grad.detach().clone().numpy()
+    bclf = clf_value.detach().clone().item()
+
+    zero_grads()
+
+    if len(obstacles):
+        Acbf = []
+        bcbf = []
+        for obstacle in obstacles:
+            cbf_value = -sphere_distance(p_eval, obstacle)
+            cbf_value.backward(retain_graph=True)
+
+            Acbf.append(c_eval.grad.detach().clone().numpy())
+            bcbf.append(cbf_value.detach().clone().item())
+
+            zero_grads()
+
+        Acbf = np.vstack(Acbf)
+        bcbf = np.vstack(bcbf)
+
+    else:
+        Acbf = bcbf = None
+
+    u_star = qp_min_effort(Aclf, bclf, Acbf, bcbf, m)
+
+    zero_grads()
+
+    return u_star
 
 
 if __name__ == '__main__':

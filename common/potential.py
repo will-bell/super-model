@@ -1,5 +1,8 @@
+from typing import Tuple, Union
+
 import numpy as np
-from typing import Tuple
+import torch
+
 from common.functions import distance
 
 
@@ -11,17 +14,24 @@ class Potential:
 
     quadratic_radius: float
 
-    def __init__(self, minimum: np.ndarray, zeta: float = 1., quadratic_radius: float = 1.):
+    def __init__(self, minimum: Union[np.ndarray, torch.Tensor], zeta: float = 1., quadratic_radius: float = 1.):
         self._minimum, self._zeta, self._quadratic_radius = self._verify(minimum, zeta, quadratic_radius)
 
     @staticmethod
     def _verify(minimum: np.ndarray, zeta: float, quadratic_radius: float) -> Tuple[np.ndarray, float, float]:
-        assert minimum.size == 2, 'Goal must be a two-dimensional point'
+        if isinstance(minimum, np.ndarray):
+            assert minimum.size == 2, 'Goal must be a two-dimensional point'
+            minimum = minimum.copy()
+        elif isinstance(minimum, torch.Tensor):
+            assert minimum.numel() == 2, 'Goal must be a two-dimensional point'
+            minimum = minimum.clone()
+        else:
+            raise ValueError('minimum must be an np.ndarray or torch.Tensor')
         assert zeta > 0, 'Zeta must be a value greater than 0'
         assert quadratic_radius > 0, 'Eta must be a value greater than 0'
-        return minimum.copy(), zeta, quadratic_radius
+        return minimum, zeta, quadratic_radius
 
-    def evaluate_potential(self, point: np.ndarray) -> float:
+    def evaluate_potential(self, point: Union[np.ndarray, torch.Tensor]) -> Union[float, torch.Tensor]:
         d2min = distance(point, self._minimum)
         if d2min <= self._quadratic_radius:
             value = .5 * self._zeta * d2min ** 2

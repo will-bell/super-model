@@ -92,8 +92,8 @@ if __name__ == '__main__':
         ax.set_aspect('equal', 'box')
         _twolink.update_joints(tuple(theta_path[i]))
         _twolink.plot(ax)
-        ax.plot(_p_goal[0], _p_goal[1], 'or')
-        ax.plot([_twolink.end_position[0], _p_goal[0]], [_twolink.end_position[1], _p_goal[1]], '--g')
+        ax.plot(_p_goal[:, 0], _p_goal[:, 1], 'or')
+        ax.plot([_twolink.end_position[:, 0], _p_goal[:, 0]], [_twolink.end_position[:, 1], _p_goal[:, 1]], '--g')
 
     anim = FuncAnimation(fig, animate, interval=5, frames=theta_path.shape[0]-1)
     plt.draw()
