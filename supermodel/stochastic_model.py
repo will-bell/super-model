@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch import distributions
 
-from common.fc_net import FCNet
+from supermodel.fc_net import FCNet
 
 
 class GaussianModel(nn.Module):

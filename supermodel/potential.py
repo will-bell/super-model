@@ -3,7 +3,7 @@ from typing import Tuple, Union
 import numpy as np
 import torch
 
-from common.functions import distance
+from supermodel.functions import distance
 
 
 class Potential:

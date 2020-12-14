@@ -2,10 +2,10 @@ from typing import List, Tuple
 
 import numpy as np
 
-from common.control import qp_min_effort
-from common.potential import Potential
-from common.sphere_obstacle import SphereObstacle
-from common.sphere_obstacle import sphere_distance, sphere_distance_gradient
+from supermodel.control import qp_min_effort
+from supermodel.potential import Potential
+from supermodel.sphere_obstacle import SphereObstacle
+from supermodel.sphere_obstacle import sphere_distance, sphere_distance_gradient
 
 
 def point_mass_clfcbf_control(p_eval: np.ndarray, potential: Potential, obstacles: List[SphereObstacle], m: float) -> np.ndarray:

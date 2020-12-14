@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from common.functions import distance, EPS
+from supermodel.functions import distance, EPS
 
 
 class SphereObstacle:

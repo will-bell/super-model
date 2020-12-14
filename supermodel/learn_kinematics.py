@@ -8,10 +8,10 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
-from common.control import qp_min_effort
-from common.potential import Potential
-from common.sphere_obstacle import SphereObstacle, sphere_distance
-from common.stochastic_model import GaussianModel, FCNet
+from supermodel.control import qp_min_effort
+from supermodel.potential import Potential
+from supermodel.sphere_obstacle import SphereObstacle, sphere_distance
+from supermodel.stochastic_model import GaussianModel, FCNet
 
 warnings.filterwarnings("ignore")
 

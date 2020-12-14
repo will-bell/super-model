@@ -3,11 +3,11 @@ from typing import Tuple, List
 import numpy as np
 import torch
 
-from common.learn_kinematics import backprop_clfcbf_control
-from common.learn_kinematics import learn_kinematics
-from common.potential import Potential
-from common.sphere_obstacle import SphereObstacle
-from common.stochastic_model import GaussianModel, FCNet
+from supermodel.learn_kinematics import backprop_clfcbf_control
+from supermodel.learn_kinematics import learn_kinematics
+from supermodel.potential import Potential
+from supermodel.sphere_obstacle import SphereObstacle
+from supermodel.stochastic_model import GaussianModel, FCNet
 from experiments.twolink_manipulator.twolink import TwoLink
 
 

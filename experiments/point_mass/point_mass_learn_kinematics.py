@@ -3,10 +3,10 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
-from common.learn_kinematics import learn_kinematics, backprop_clfcbf_control
-from common.potential import Potential
-from common.sphere_obstacle import SphereObstacle
-from common.stochastic_model import GaussianModel, FCNet
+from supermodel.learn_kinematics import learn_kinematics, backprop_clfcbf_control
+from supermodel.potential import Potential
+from supermodel.sphere_obstacle import SphereObstacle
+from supermodel.stochastic_model import GaussianModel, FCNet
 
 
 def point_mass_backprop_planner(model: GaussianModel, c_start: np.ndarray, c_goal: np.ndarray,
