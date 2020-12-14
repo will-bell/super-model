@@ -13,9 +13,11 @@ class GaussianModel(nn.Module):
 
     def __init__(self, net: FCNet, covariance: torch.Tensor = None):
         super().__init__()
-        self._net = net
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        self._net = net.to(device)
+
         covariance = torch.eye(net.output_size) if covariance is None else covariance
         self.covariance = covariance.to(device)
 
