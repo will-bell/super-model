@@ -46,8 +46,8 @@ class ModelEnsemble:
             model.zero_grad()
 
     def to(self, device: torch.device):
-        for model in self.models:
-            model.to(device)
+        for i, model in enumerate(self.models):
+            self.models[i] = model.to(device)
 
     def save(self, model_dir: pathlib.Path):
         model_dir.mkdir(exist_ok=True, parents=True)

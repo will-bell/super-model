@@ -55,7 +55,7 @@ def learn_kinematics(model_ensemble: ModelEnsemble, forward_kinematics: Kinemati
                      log_period: int = 20) -> Tuple[ModelEnsemble, np.ndarray]:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model_ensemble = model_ensemble.to(device)
+    model_ensemble.to(device)
 
     # Additional Info when using cuda
     if device.type == 'cuda':
