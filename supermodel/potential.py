@@ -34,7 +34,6 @@ class Potential:
     def evaluate_potential(self, point: Union[np.ndarray, torch.Tensor]) -> Union[float, torch.Tensor]:
         if isinstance(point, torch.Tensor):
             device = point.device
-            print(f'Using {device} for potential minimum')
             self._minimum = self._minimum.to(device)
 
         d2min = distance(point, self._minimum)

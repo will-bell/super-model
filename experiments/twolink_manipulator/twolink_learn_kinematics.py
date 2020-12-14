@@ -7,7 +7,7 @@ from supermodel.learn_kinematics import backprop_clfcbf_control
 from supermodel.learn_kinematics import learn_kinematics
 from supermodel.potential import Potential
 from supermodel.sphere_obstacle import SphereObstacle
-from supermodel.stochastic_model import GaussianModel, FCNet
+from supermodel.stochastic_model import ModelEnsemble
 from experiments.twolink_manipulator.twolink import TwoLink
 
 
@@ -36,10 +36,27 @@ def twolink_forward_kinematics(joint_angles: np.ndarray) -> np.ndarray:
     return end_position
 
 
-def twolink_backprop_planner(model: GaussianModel, c_start: np.ndarray, c_goal: np.ndarray,
-                             obstacles: List[SphereObstacle] = None, n_steps: int = 1000, eps: float = .1,
-                             m: float = 100.) -> Tuple[np.ndarray, np.ndarray]:
+def twolink_backprop_planner(model_ensemble: ModelEnsemble, c_start: np.ndarray, c_goal: np.ndarray,
+                             covariance: torch.Tensor = None, obstacles: List[SphereObstacle] = None,
+                             n_steps: int = 1000, eps: float = .1, m: float = 100.) -> Tuple[np.ndarray, np.ndarray]:
+    """
 
+    Args:
+        model_ensemble:
+        c_start:
+        c_goal:
+        covariance:
+        obstacles:
+        n_steps:
+        eps:
+        m:
+
+    Returns:
+
+    """
+    device = next(next(model_ensemble.__iter__()).parameters()).device
+
+    covariance = torch.eye(c_start.size).to(device) if covariance is None else covariance
     obstacles = [] if obstacles is None else obstacles
 
     path = [c_start]
@@ -48,7 +65,7 @@ def twolink_backprop_planner(model: GaussianModel, c_start: np.ndarray, c_goal: 
 
     step = 0
     while step <= n_steps:
-        command = backprop_clfcbf_control(model, path[-1], potential, obstacles, m).squeeze()
+        command = backprop_clfcbf_control(model_ensemble, path[-1], potential, covariance, obstacles, m).squeeze()
         path.append(path[-1] + eps * command)
 
         path_u.append(potential.evaluate_potential(torch.Tensor(path[-1])))
@@ -75,29 +92,27 @@ if __name__ == '__main__':
     theta_start = (np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi))
     twolink = TwoLink((l1, l2), joint_angles=theta_start)
 
-    covariance = .01 * torch.eye(2)
-    model = GaussianModel(FCNet(2, 2, [10, 10]), covariance=covariance)
-
     model_dir = pathlib.Path('./models')
-    model_path = model_dir / 'twolink_test_model.pt'
+    model_path = model_dir / 'twolink_test'
     if not pathlib.Path.exists(model_path):
         torus_configurations = torus_grid(.001)
-        trained_model, _ = learn_kinematics(model, twolink_forward_kinematics, torus_configurations, lr=1e-2,
-                                            train_batch_size=500, valid_batch_size=100, n_epochs=5)
+        _model_ensemble = ModelEnsemble(1000, 2, 2, [1024, 1024])
+        _model_ensemble, _ = learn_kinematics(_model_ensemble, twolink_forward_kinematics, torus_configurations,
+                                              lr=1e-3, train_batch_size=500, valid_batch_size=100, n_epochs=3)
 
-        model_dir.mkdir(exist_ok=True, parents=True)
-        torch.save(trained_model.state_dict(), str(model_path))
+        _model_ensemble.save(model_path)
 
     else:
-        model.load_state_dict(torch.load(model_path))
-        trained_model = model
+        _device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        _model_ensemble = ModelEnsemble.load(2, 2, [1024, 1024], model_path, _device)
 
     theta_goal = (np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi))
     p_goal = twolink.forward_kinematics2(np.array(theta_goal))
 
+    _covariance = torch.eye(2)
     _obstacles = []
-    theta_path, _path_u = twolink_backprop_planner(trained_model, np.array(theta_start), np.array(p_goal),
-                                                   obstacles=_obstacles, eps=.1, m=1000)
+    theta_path, _path_u = twolink_backprop_planner(_model_ensemble, np.array(theta_start), np.array(p_goal),
+                                                   covariance=_covariance, obstacles=_obstacles, eps=.1, m=1000)
 
     fig1, ax1 = plt.subplots()
     ax1.plot(_path_u)
