@@ -55,7 +55,7 @@ def learn_kinematics(model_ensemble: ModelEnsemble, forward_kinematics: Kinemati
                      log_period: int = 20) -> Tuple[ModelEnsemble, np.ndarray]:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = model_ensemble.to(device)
+    model_ensemble = model_ensemble.to(device)
 
     # Additional Info when using cuda
     if device.type == 'cuda':
@@ -96,9 +96,6 @@ def learn_kinematics(model_ensemble: ModelEnsemble, forward_kinematics: Kinemati
 
                 optimizer.step()
 
-            n_epoch_updates += 1
-            n_total_updates += 1
-
             if not n_epoch_updates % log_period:
                 with torch.no_grad():
                     valid_count = 0
@@ -117,8 +114,11 @@ def learn_kinematics(model_ensemble: ModelEnsemble, forward_kinematics: Kinemati
                         valid_count += 1
 
                     mean_loss = running_loss / valid_count
-                    print(f'Epoch = {epoch + 1}, Epoch Updates = {n_epoch_updates}, Mean loss = {mean_loss}')
+                    print(f'Epoch = {epoch + 1}, Total Updates = {n_total_updates}, Mean loss = {mean_loss}')
                     loss_history.append([n_total_updates, mean_loss])
+
+            n_epoch_updates += 1
+            n_total_updates += 1
 
     loss_history = np.asarray(loss_history)
 

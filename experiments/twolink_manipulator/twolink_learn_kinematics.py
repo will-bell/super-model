@@ -95,7 +95,7 @@ if __name__ == '__main__':
     model_dir = pathlib.Path('./models')
     model_path = model_dir / 'twolink_test'
     if not pathlib.Path.exists(model_path):
-        torus_configurations = torus_grid(.001)
+        torus_configurations = torus_grid(.005)
         _model_ensemble = ModelEnsemble(1000, 2, 2, [1024, 1024])
         _model_ensemble, _ = learn_kinematics(_model_ensemble, twolink_forward_kinematics, torus_configurations,
                                               lr=1e-3, train_batch_size=500, valid_batch_size=100, n_epochs=3)
