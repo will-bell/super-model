@@ -122,14 +122,16 @@ def backprop_clfcbf_control(model: GaussianModel, c_eval: np.ndarray, potential:
         model.zero_grad()
         c_eval.grad.data.zero_()
 
-    c_eval = torch.Tensor(c_eval).requires_grad_()
+    device = next(model.parameters()).device
+
+    c_eval = torch.Tensor(c_eval).requires_grad_().to(device)
     p_eval = model(c_eval).rsample()
 
     clf_value = potential.evaluate_potential(p_eval)
     clf_value.backward(retain_graph=True)
 
-    Aclf = c_eval.grad.detach().clone().numpy()
-    bclf = clf_value.detach().clone().item()
+    Aclf = c_eval.grad.detach().to('cpu').clone().numpy()
+    bclf = clf_value.detach().to('cpu').clone().item()
 
     zero_grads()
 
@@ -140,8 +142,8 @@ def backprop_clfcbf_control(model: GaussianModel, c_eval: np.ndarray, potential:
             cbf_value = -sphere_distance(p_eval, obstacle)
             cbf_value.backward(retain_graph=True)
 
-            Acbf.append(c_eval.grad.detach().clone().numpy())
-            bcbf.append(cbf_value.detach().clone().item())
+            Acbf.append(c_eval.grad.detach().to('cpu').clone().numpy())
+            bcbf.append(cbf_value.detach().to('cpu').clone().item())
 
             zero_grads()
 
