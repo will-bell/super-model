@@ -55,7 +55,7 @@ def learn_kinematics(model: GaussianModel, forward_kinematics: Kinematics, confi
                      log_period: int = 20) -> Tuple[GaussianModel, np.ndarray]:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model.to(device)
+    model = model.to(device)
 
     # Additional Info when using cuda
     if device.type == 'cuda':
@@ -83,9 +83,12 @@ def learn_kinematics(model: GaussianModel, forward_kinematics: Kinematics, confi
         for configurations, true_states in train_generator:
             optimizer.zero_grad()
 
-            predicted_states = model(configurations.to(device)).rsample()
+            configurations = configurations.to(device)
+            true_states = true_states.to(device)
 
-            loss = F.mse_loss(predicted_states, true_states.to(device)).mean()
+            predicted_states = model(configurations).rsample()
+
+            loss = F.mse_loss(predicted_states, true_states).mean()
             loss.backward()
 
             optimizer.step()
@@ -97,8 +100,11 @@ def learn_kinematics(model: GaussianModel, forward_kinematics: Kinematics, confi
                     valid_count = 0
                     running_loss = 0
                     for valid_configs, valid_true_states in valid_generator:
-                        predicted_states = model(valid_configs.to_device()).rsample()
-                        running_loss += F.mse_loss(predicted_states, valid_true_states.to(device)).mean().detach().to('cpu')
+                        valid_configs = valid_configs.to(device)
+                        valid_true_states = valid_true_states.to(device)
+
+                        predicted_states = model(valid_configs).rsample()
+                        running_loss += F.mse_loss(predicted_states, valid_true_states).mean().detach().to('cpu')
                         valid_count += 1
 
                     mean_loss = running_loss / valid_count
