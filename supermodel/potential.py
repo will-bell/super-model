@@ -32,6 +32,10 @@ class Potential:
         return minimum, zeta, quadratic_radius
 
     def evaluate_potential(self, point: Union[np.ndarray, torch.Tensor]) -> Union[float, torch.Tensor]:
+        if isinstance(point, torch.Tensor):
+            device = point.device
+            self._minimum = self._minimum.to(device)
+
         d2min = distance(point, self._minimum)
         if d2min <= self._quadratic_radius:
             value = .5 * self._zeta * d2min ** 2
