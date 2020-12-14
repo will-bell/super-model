@@ -11,7 +11,7 @@ from supermodel.stochastic_model import GaussianModel, FCNet
 from experiments.twolink_manipulator.twolink import TwoLink
 
 
-def torus_grid(delta: float):
+def torus_grid(delta: float) -> np.ndarray:
     x_range = np.arange(-np.pi, np.pi, delta)
     y_range = np.arange(-np.pi, np.pi, delta)
     xx, yy = np.meshgrid(x_range, y_range)
