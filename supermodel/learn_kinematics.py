@@ -124,7 +124,7 @@ def backprop_clfcbf_control(model: GaussianModel, c_eval: np.ndarray, potential:
 
     device = next(model.parameters()).device
 
-    c_eval = torch.Tensor(c_eval).requires_grad_().to(device)
+    c_eval = torch.Tensor(c_eval).to(device).requires_grad_()
     p_eval = model(c_eval).rsample()
 
     clf_value = potential.evaluate_potential(p_eval)
