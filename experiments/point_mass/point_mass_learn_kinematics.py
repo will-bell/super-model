@@ -70,7 +70,7 @@ if __name__ == '__main__':
         xx, yy = np.meshgrid(x_range, y_range)
         _configurations = np.vstack([xx.ravel(), yy.ravel()]).T
 
-        _model_ensemble = ModelEnsemble(100, 2, 2, [])
+        _model_ensemble = ModelEnsemble(10, 2, 2, [])
 
         _model_ensemble, _loss_history = learn_kinematics(_model_ensemble, identity_kinematics, _configurations,
                                                           n_epochs=10, lr=1e-2, l2_reg=0.001)

@@ -72,7 +72,6 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     mag = 2
 
-
     def animate(i):
         ax.clear()
         ax.set_xlim([-mag, mag])
