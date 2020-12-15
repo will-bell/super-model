@@ -51,8 +51,8 @@ def shuffle_split(configurations: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def learn_kinematics(model_ensemble: ModelEnsemble, forward_kinematics: Kinematics, configurations: np.ndarray,
-                     lr: float = 1e-2, n_epochs: int = 10, train_batch_size: int = 100, valid_batch_size: int = 10,
-                     log_period: int = 20) -> Tuple[ModelEnsemble, np.ndarray]:
+                     lr: float = 1e-2, l2_reg: float = .1, n_epochs: int = 10, train_batch_size: int = 100,
+                     valid_batch_size: int = 10, log_period: int = 20) -> Tuple[ModelEnsemble, np.ndarray]:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model_ensemble.to(device)
@@ -75,7 +75,7 @@ def learn_kinematics(model_ensemble: ModelEnsemble, forward_kinematics: Kinemati
 
     optimizers = []
     for model in model_ensemble:
-        optimizers.append(torch.optim.Adam(model.parameters(), lr=lr))
+        optimizers.append(torch.optim.Adam(model.parameters(), lr=lr, weight_decay=l2_reg))
 
     loss_history = []
 

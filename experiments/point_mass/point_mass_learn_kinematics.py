@@ -70,19 +70,19 @@ if __name__ == '__main__':
         xx, yy = np.meshgrid(x_range, y_range)
         _configurations = np.vstack([xx.ravel(), yy.ravel()]).T
 
-        _model_ensemble = ModelEnsemble(100, 2, 2)
+        _model_ensemble = ModelEnsemble(3, 2, 2, [10])
 
         _model_ensemble, _loss_history = learn_kinematics(_model_ensemble, identity_kinematics, _configurations,
-                                                          n_epochs=2, lr=1e-2)
-        _model_ensemble.save(model_path)
+                                                          n_epochs=10, lr=1e-2, l2_reg=0.001)
+        # _model_ensemble.save(model_path)
 
     else:
-        _model_ensemble = ModelEnsemble.load(2, 2, [], model_path)
+        _model_ensemble = ModelEnsemble.load(2, 2, [10], model_path)
 
     _c_start = np.array([-1.5, 0.1])
     _c_goal = np.array([1.5, 0.])
 
-    _covariance = 1 * torch.eye(2)
+    _covariance = .1 * torch.eye(2)
     _obstacles = [SphereObstacle((0., 0.), .25), SphereObstacle((0., 1.), .25)]
     _path, _path_u = point_mass_backprop_planner(_model_ensemble, _c_start, _c_goal, covariance=_covariance,
                                                  obstacles=_obstacles, eps=.1, m=1000)

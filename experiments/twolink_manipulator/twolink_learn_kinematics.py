@@ -36,7 +36,7 @@ def twolink_forward_kinematics(joint_angles: np.ndarray) -> np.ndarray:
     return end_position
 
 
-def twolink_backprop_planner(model_ensemble: ModelEnsemble, c_start: np.ndarray, c_goal: np.ndarray,
+def twolink_backprop_planner(twolink: TwoLink, model_ensemble: ModelEnsemble, c_start: np.ndarray, c_goal: np.ndarray,
                              covariance: torch.Tensor = None, obstacles: List[SphereObstacle] = None,
                              n_steps: int = 1000, eps: float = .1, m: float = 100.) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -59,16 +59,21 @@ def twolink_backprop_planner(model_ensemble: ModelEnsemble, c_start: np.ndarray,
     covariance = torch.eye(c_start.size).to(device) if covariance is None else covariance
     obstacles = [] if obstacles is None else obstacles
 
-    path = [c_start]
-    potential = Potential(torch.Tensor(c_goal), quadratic_radius=.05)
-    path_u = [potential.evaluate_potential(torch.Tensor(c_start)).item()]
+    path = [c_start % (2 * np.pi)]
+    potential = Potential(torch.Tensor(c_goal), quadratic_radius=.01)
+
+    p_start, _ = twolink.forward_kinematics((c_start[0], c_start[1]))
+    path_u = [potential.evaluate_potential(p_start)]
 
     step = 0
     while step <= n_steps:
         command = backprop_clfcbf_control(model_ensemble, path[-1], potential, covariance, obstacles, m).squeeze()
-        path.append(path[-1] + eps * command)
 
-        path_u.append(potential.evaluate_potential(torch.Tensor(path[-1])))
+        c_next = (path[-1] + eps * command) % (2 * np.pi)
+        p_next, _ = twolink.forward_kinematics((c_next[0], c_next[1]))
+
+        path.append(c_next)
+        path_u.append(potential.evaluate_potential(p_next))
 
         if np.linalg.norm(command) < 1e-2 or np.linalg.norm(path[-1] - c_goal) < 1e-2:
             break
@@ -84,19 +89,14 @@ def twolink_backprop_planner(model_ensemble: ModelEnsemble, c_start: np.ndarray,
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
+    from experiments.twolink_manipulator.twolink_clfcbf_planner import sample_good_theta
     import pathlib
-
-    l1 = 1
-    l2 = 1
-
-    theta_start = (np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi))
-    twolink = TwoLink((l1, l2), joint_angles=theta_start)
 
     model_dir = pathlib.Path('./models')
     model_path = model_dir / 'twolink_test'
     if not pathlib.Path.exists(model_path):
         torus_configurations = torus_grid(.005)
-        _model_ensemble = ModelEnsemble(100, 2, 2, [1024, 1024])
+        _model_ensemble = ModelEnsemble(100, 2, 2, [512, 512])
         _model_ensemble, _ = learn_kinematics(_model_ensemble, twolink_forward_kinematics, torus_configurations,
                                               lr=1e-3, train_batch_size=500, valid_batch_size=100, n_epochs=3)
 
@@ -104,32 +104,52 @@ if __name__ == '__main__':
 
     else:
         _device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        _model_ensemble = ModelEnsemble.load(2, 2, [1024, 1024], model_path, _device)
+        _model_ensemble = ModelEnsemble.load(2, 2, [512, 512], model_path, _device)
 
-    theta_goal = (np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi))
-    p_goal = twolink.forward_kinematics2(np.array(theta_goal))
+    l1 = 1
+    l2 = 1
 
-    _covariance = torch.eye(2)
-    _obstacles = []
-    theta_path, _path_u = twolink_backprop_planner(_model_ensemble, np.array(theta_start), np.array(p_goal),
-                                                   covariance=_covariance, obstacles=_obstacles, eps=.1, m=1000)
+    _twolink = TwoLink((l1, l2), joint_angles=(0., 0.))
+
+    _obstacles = [SphereObstacle((1, -.5), .25)]
+    theta_start = sample_good_theta(_twolink, _obstacles)
+    _theta_goal = sample_good_theta(_twolink, _obstacles)
+    p_goal, _ = _twolink.forward_kinematics(_theta_goal)
+
+    _twolink.update_joints(theta_start)
+
+    _covariance = .1 * torch.eye(2)
+    theta_path, _path_u = twolink_backprop_planner(_twolink, _model_ensemble, np.array(theta_start), np.array(p_goal),
+                                                   covariance=_covariance, obstacles=_obstacles, eps=.1, m=1000.)
 
     fig1, ax1 = plt.subplots()
     ax1.plot(_path_u)
+    ax1.xlabel('steps')
+    ax1.ylabel('potential')
+
+    fig2, ax2 = plt.subplots()
+    ax2.plot(theta_path[:, 0], '-b', label=r'$\theta_1$')
+    ax2.plot(theta_path[:, 1], '-r', label=r'$\theta_2$')
+    ax2.set_xlabel('steps')
+    ax2.set_ylabel(r'$\theta$ [radians]')
+    ax2.legend()
 
     fig, ax = plt.subplots()
     mag = 2
 
     def animate(i):
         ax.clear()
+        ax.xlabel('X')
+        ax.ylabel('Y')
         ax.set_xlim([-mag, mag])
         ax.set_ylim([-mag, mag])
         ax.set_aspect('equal', 'box')
-        twolink.update_joints(tuple(theta_path[i]))
-        twolink.plot(ax)
+        _twolink.update_joints(tuple(theta_path[i]))
+        _twolink.plot(ax)
         ax.plot(p_goal[:, 0], p_goal[:, 1], 'or')
-        ax.plot([twolink.end_position[:, 0], p_goal[:, 0]], [twolink.end_position[:, 1], p_goal[:, 1]], '--g')
-
+        ax.plot([_twolink.end_position[:, 0], p_goal[:, 0]], [_twolink.end_position[:, 1], p_goal[:, 1]], '--g')
+        for obstacle in _obstacles:
+            obstacle.plot(ax)
 
     anim = FuncAnimation(fig, animate, interval=5, frames=theta_path.shape[0] - 1)
     plt.draw()
