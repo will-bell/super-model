@@ -26,7 +26,7 @@ As requested in the submission guidelines, this script will generate all the plo
 
 `python experiments\main_results.py`
 
-Otherwise, you can run this function which doesn't take forever. The model doesn't actually require any inverse kinematics since the configuration space and the workspace are one-to-one but it does run the same algorithm. The model just learns to return the output.
+Otherwise, you can run this function which doesn't take forever. The model doesn't actually require any inverse kinematics since the configuration space and the workspace are one-to-one but it does run the same algorithm. The model just learns to return the output, but it demonstrates the use of the automatic differentiation and backpropagation algorithms for setting up the optimal control problem.
 
 `python experiments\point_mass\point_mass_learn_kinematics.py`
 
