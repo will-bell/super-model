@@ -1,9 +1,10 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
-from common.functions import distance, EPS
+from supermodel.functions import distance, EPS
 
 
 class SphereObstacle:
@@ -24,8 +25,11 @@ class SphereObstacle:
         ax.add_artist(circle_plot)
 
 
-def sphere_distance(point: np.ndarray, sphere: SphereObstacle) -> float:
-    return distance(point, sphere.center) - sphere.radius
+def sphere_distance(point: Union[np.ndarray, torch.Tensor], sphere: SphereObstacle) -> Union[float, torch.Tensor]:
+    if isinstance(point, torch.Tensor):
+        return distance(point, torch.Tensor(sphere.center)) - sphere.radius
+    else:
+        return distance(point, sphere.center) - sphere.radius
 
 
 def sphere_distance_gradient(point: np.ndarray, sphere: SphereObstacle) -> np.ndarray:

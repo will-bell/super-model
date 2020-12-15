@@ -1,13 +1,11 @@
 from typing import List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.animation import FuncAnimation
 
-from common.sphere_obstacle import sphere_distance, sphere_distance_gradient
-from common.control import qp_min_effort
-from common.potential import Potential
-from common.sphere_obstacle import SphereObstacle
+from supermodel.control import qp_min_effort
+from supermodel.potential import Potential
+from supermodel.sphere_obstacle import SphereObstacle
+from supermodel.sphere_obstacle import sphere_distance, sphere_distance_gradient
 
 
 def point_mass_clfcbf_control(p_eval: np.ndarray, potential: Potential, obstacles: List[SphereObstacle], m: float) -> np.ndarray:
@@ -59,6 +57,9 @@ def point_mass_clfcbf_planner(p_start: np.ndarray, p_goal: np.ndarray, obstacles
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+
     _p_start = np.array([-1.5, 0.1])
     _p_goal = np.array([1.5, 0.])
 
