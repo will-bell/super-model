@@ -3,6 +3,12 @@ Model-based reinforcement learning experiments
 
 
 # Installation
+You should first clone this repository.
+
+`git clone https://github.com/will-bell/super-model.git`
+
+This will download the files with the correct file structure for installation/usage and place them in a directory called super-model.
+
 It is recommended that you use a virtual environment for this repository. You may find that you need a version of Pytorch that is specific to your hardware if you want to use GPU acceleration. Otherwise, this should install the CPU version by default.
 
 To run the experiments, you will need to install all the dependencies in the requirements.txt file first.
