@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, acos, atan2
 from typing import Tuple, Union
 
 import matplotlib.pyplot as plt
@@ -63,6 +63,14 @@ class TwoLink:
 
         return end_position
 
+    def inverse_kinematics(self, end_position: Tuple[float, float]) -> Tuple[float, float]:
+        x, y = end_position
+        l1, l2 = self.link_lengths
+        theta2 = acos((x**2 + y**2 - l1**2 - l2**2) / (2*l1*l2))
+        theta1 = atan2(y, x) - atan2(l2*sin(theta2), l1 + l1*cos(theta2))
+
+        return theta1, theta2
+
     def plot(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots()
@@ -72,9 +80,9 @@ class TwoLink:
             ax.set_aspect('equal', 'box')
 
         ax.plot([self.joint1_position[:, 0], self.joint2_position[:, 0]],
-                [self.joint1_position[:, 1], self.joint2_position[:, 1]], 'r-')
+                [self.joint1_position[:, 1], self.joint2_position[:, 1]], 'b-')
         ax.plot([self.joint2_position[:, 0], self.end_position[:, 0]],
-                [self.joint2_position[:, 1], self.end_position[:, 1]], 'r-')
+                [self.joint2_position[:, 1], self.end_position[:, 1]], 'b-')
         ax.plot(self.joint1_position[:, 0], self.joint1_position[:, 1], 'ko')
         ax.plot(self.joint2_position[:, 0], self.joint2_position[:, 1], 'ko')
         ax.plot(self.end_position[:, 0], self.end_position[:, 1], 'ko')

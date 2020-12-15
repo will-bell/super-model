@@ -61,7 +61,7 @@ def twolink_backprop_planner(twolink: TwoLink, model_ensemble: ModelEnsemble, c_
     obstacles = [] if obstacles is None else obstacles
 
     path = [c_start % (2 * np.pi)]
-    potential = Potential(torch.Tensor(c_goal), quadratic_radius=.01)
+    potential = Potential(torch.Tensor(c_goal), quadratic_radius=0.)
 
     p_start, _ = twolink.forward_kinematics((c_start[0], c_start[1]))
     path_u = [potential.evaluate_potential(p_start)]
@@ -76,7 +76,7 @@ def twolink_backprop_planner(twolink: TwoLink, model_ensemble: ModelEnsemble, c_
         path.append(c_next)
         path_u.append(potential.evaluate_potential(p_next))
 
-        if np.linalg.norm(command) < 1e-2 or np.linalg.norm(path[-1] - c_goal) < 1e-2:
+        if np.linalg.norm(command) < 1e-3 or np.linalg.norm(path[-1] - c_goal) < 1e-2:
             break
 
         step += 1
@@ -90,7 +90,6 @@ def twolink_backprop_planner(twolink: TwoLink, model_ensemble: ModelEnsemble, c_
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
-    from experiments.twolink_manipulator.twolink_clfcbf_planner import sample_good_theta
     import pathlib
 
     model_dir = pathlib.Path('./models')
@@ -112,21 +111,41 @@ if __name__ == '__main__':
 
     _twolink = TwoLink((l1, l2), joint_angles=(0., 0.))
 
-    _obstacles = [SphereObstacle((1, -.5), .25)]
-    theta_start = sample_good_theta(_twolink, _obstacles)
-    _theta_goal = sample_good_theta(_twolink, _obstacles)
+    _obstacles = [SphereObstacle((.75, -.75), .5), SphereObstacle((-.75, .75), .5)]
+
+    theta_start = _twolink.inverse_kinematics((-1.25, 1.25))
+    _theta_goal = _twolink.inverse_kinematics((.25, -.25))
     p_goal, _ = _twolink.forward_kinematics(_theta_goal)
 
     _twolink.update_joints(theta_start)
 
     _covariance = .1 * torch.eye(2)
     theta_path, _path_u = twolink_backprop_planner(_twolink, _model_ensemble, np.array(theta_start), np.array(p_goal),
-                                                   covariance=_covariance, obstacles=_obstacles, eps=.1, m=1000.)
+                                                   covariance=_covariance, obstacles=_obstacles, eps=.01, m=1000.)
+
+    x_path = []
+    for theta in theta_path:
+        x, _ = _twolink.forward_kinematics((theta[0], theta[1]))
+        x_path.append(x)
+    x_path = np.vstack(x_path)
+
+    fig0, ax0 = plt.subplots()
+    ax0.plot(x_path[:, 0], x_path[:, 1], '--b')
+    for obstacle in _obstacles:
+        obstacle.plot(ax0)
+    _twolink.update_joints((theta_path[0, 0], theta_path[0, 1]))
+    _twolink.plot(ax0)
+    _twolink.update_joints((theta_path[-1, 0], theta_path[-1, 1]))
+    _twolink.plot(ax0)
+    ax0.plot(p_goal[:, 0], p_goal[:, 1], 'og')
+    ax0.set_aspect('equal', 'box')
+    ax0.set_xlabel('X')
+    ax0.set_ylabel('Y')
 
     fig1, ax1 = plt.subplots()
     ax1.plot(_path_u)
-    ax1.xlabel('steps')
-    ax1.ylabel('potential')
+    ax1.set_xlabel('steps')
+    ax1.set_ylabel('potential')
 
     fig2, ax2 = plt.subplots()
     ax2.plot(theta_path[:, 0], '-b', label=r'$\theta_1$')
@@ -135,22 +154,22 @@ if __name__ == '__main__':
     ax2.set_ylabel(r'$\theta$ [radians]')
     ax2.legend()
 
-    fig, ax = plt.subplots()
+    fig, ax3 = plt.subplots()
     mag = 2
 
     def animate(i):
-        ax.clear()
-        ax.xlabel('X')
-        ax.ylabel('Y')
-        ax.set_xlim([-mag, mag])
-        ax.set_ylim([-mag, mag])
-        ax.set_aspect('equal', 'box')
+        ax3.clear()
+        ax3.set_xlabel('X')
+        ax3.set_ylabel('Y')
+        ax3.set_xlim([-mag, mag])
+        ax3.set_ylim([-mag, mag])
+        ax3.set_aspect('equal', 'box')
         _twolink.update_joints(tuple(theta_path[i]))
-        _twolink.plot(ax)
-        ax.plot(p_goal[:, 0], p_goal[:, 1], 'or')
-        ax.plot([_twolink.end_position[:, 0], p_goal[:, 0]], [_twolink.end_position[:, 1], p_goal[:, 1]], '--g')
+        _twolink.plot(ax3)
+        ax3.plot(p_goal[:, 0], p_goal[:, 1], 'or')
+        ax3.plot([_twolink.end_position[:, 0], p_goal[:, 0]], [_twolink.end_position[:, 1], p_goal[:, 1]], '--g')
         for obstacle in _obstacles:
-            obstacle.plot(ax)
+            obstacle.plot(ax3)
 
     anim = FuncAnimation(fig, animate, interval=5, frames=theta_path.shape[0] - 1)
     plt.draw()
